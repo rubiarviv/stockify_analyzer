@@ -5,6 +5,7 @@ import { initialize } from '@muzilator/sdk';
 var stockMessage;
 var midi;
 var musicOn=false;
+// var pitches = [];
 
 window.addEventListener('load', () => {
   async function init() {
@@ -13,6 +14,7 @@ window.addEventListener('load', () => {
     midi = await platform.createChannel('midi');
     startListeners();
   }
+  init();
 })
 
 function onStockMessage(message) {
@@ -22,13 +24,10 @@ function onStockMessage(message) {
   switch (message.data.type.toLowerCase()) {
     case 'music-on':
       musicOn=true;
-      let pitches = loadXMLFeed(stock_name,start_date,finish_date);
-      for(var pitch in pitches){
-        midi.postMessage('note-on',pitch,100);
-        sleep(500);
-        midi.postMessage('note-off',pitch,100);
-        if(!musicOn) break; 
-      }
+      loadXMLFeed(stock_name,start_date,finish_date);
+      // for(var pitch in pitches){
+
+      // }
     break;
     case 'music-off':
       musicOn=false;
@@ -109,6 +108,7 @@ function sleep(delay) {
 }
 
 function loadXMLFeed(stock_name,start_date,finish_date){
+  // pitches = [];
     // const url = "https://www.alphavantage.co/query?function=FX_INTRADAY&from_symbol=EUR&to_symbol=USD&interval=1min&apikey=5L58QGRKEDSSMQRG";
     var stock_url = "https://sandbox.tradier.com/v1/markets/history?symbol="+
                     stock_name+"&interval=daily&start="+
@@ -140,13 +140,13 @@ function loadXMLFeed(stock_name,start_date,finish_date){
     var max_high = -1;
     var min_low = 1000000;
     var max_vol = 0;
-    let pitches = {};
     fetch(req)
       .then(response=>response.text())
       .then(data=> {
           let history = JSON.parse(data);
-          let days = history.history.day.filter(function (entry) {
-            return entry.date > '2015-08-01' && entry.date < '2015-09-15';});
+          let days = history.history.day;
+          //.filter(function (entry) {
+          //  return entry.date > '2015-08-01' && entry.date < '2015-09-15';});
           for (let i =0;i < days.length;i++){
               // let date = days[i].date;
               // let open = days[i].open;
@@ -168,10 +168,14 @@ function loadXMLFeed(stock_name,start_date,finish_date){
               let volume = parseInt(days[i].volume);
               let pitch = getNote((close-min_low)/(max_high-min_low)*3,volume/max_vol*3,(close-open)>=0);
               console.log(pitch);
-              pitches.append(pitch);
+              midi.postMessage({type: 'note-on',pitch: pitch, velocity: 100});
+              sleep(500);
+              midi.postMessage({type: 'note-off',pitch: pitch, velocity: 100});
+              if(!musicOn) break; 
+              // pitches.push(pitch);
           }
 
     });
-    return pitches;
+    // return pitches;
 }
 
