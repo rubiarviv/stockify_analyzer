@@ -25,9 +25,6 @@ function onStockMessage(message) {
     case 'music-on':
       musicOn=true;
       loadXMLFeed(stock_name,start_date,finish_date);
-      // for(var pitch in pitches){
-
-      // }
     break;
     case 'music-off':
       musicOn=false;
@@ -108,7 +105,6 @@ function sleep(delay) {
 }
 
 function loadXMLFeed(stock_name,start_date,finish_date){
-  // pitches = [];
     // const url = "https://www.alphavantage.co/query?function=FX_INTRADAY&from_symbol=EUR&to_symbol=USD&interval=1min&apikey=5L58QGRKEDSSMQRG";
     var stock_url = "https://sandbox.tradier.com/v1/markets/history?symbol="+
                     stock_name+"&interval=daily&start="+
@@ -162,7 +158,6 @@ function loadXMLFeed(stock_name,start_date,finish_date){
           console.log('min_low: ' + min_low);
           console.log('max_vol: ' + max_vol);
           for (let i =0;i < days.length;i++){
-              // let date = days[i].date;
               let open = days[i].open;
               let close = days[i].close;
               let volume = parseInt(days[i].volume);
@@ -172,10 +167,8 @@ function loadXMLFeed(stock_name,start_date,finish_date){
               sleep(500);
               midi.postMessage({type: 'note-off',pitch: pitch, velocity: 100});
               if(!musicOn) break; 
-              // pitches.push(pitch);
           }
 
     });
-    // return pitches;
 }
 
