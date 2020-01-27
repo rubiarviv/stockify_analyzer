@@ -135,7 +135,8 @@ function loadXMLFeed(stock_name,start_date,finish_date){
     // volume: 28364848
     var max_high = -1;
     var min_low = 1000000;
-    var max_vol = 0;
+    var max_vol = -1;
+    var min_vol = 1000000;
     fetch(req)
       .then(response=>response.text())
       .then(data=> {
@@ -153,6 +154,7 @@ function loadXMLFeed(stock_name,start_date,finish_date){
               // let close = history.history.day[i].close;
               let volume = parseInt(days[i].volume);
               max_vol = volume>max_vol?volume:max_vol;
+              min_vol = volume<min_vol?volume:min_vol;
           }
           console.log('max_high: ' + max_high);
           console.log('min_low: ' + min_low);
@@ -161,7 +163,7 @@ function loadXMLFeed(stock_name,start_date,finish_date){
               let open = days[i].open;
               let close = days[i].close;
               let volume = parseInt(days[i].volume);
-              let pitch = getNote((close-min_low)/(max_high-min_low)*3,volume/max_vol*3,(close-open)>=0);
+              let pitch = getNote(3*((close-min_low)/(max_high-min_low)),3*((volume-min_vol)/(max_vol-min_vol)),(close-open)>=0);
               console.log(pitch);
               midi.postMessage({type: 'note-on',pitch: pitch, velocity: 100});
               sleep(500);
