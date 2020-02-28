@@ -1,11 +1,15 @@
 // Name: Rubi Arviv
 // ID: 033906132
 import { initialize } from '@muzilator/sdk';
-
+import {miditime, get_data_range, linear_scale_pct, scale_to_note, note_to_midi_pitch} from './translator';
 var stockMessage;
 var midi;
 var musicOn=false;
-// var pitches = [];
+
+
+const c_major = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const c_minor = ['C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb'];
+
 
 window.addEventListener('load', () => {
   async function init() {
@@ -24,7 +28,7 @@ function onStockMessage(message) {
   switch (message.data.type.toLowerCase()) {
     case 'music-on':
       musicOn=true;
-      loadXMLFeed(stock_name,start_date,finish_date);
+      loadXMLFeed2(stock_name,start_date,finish_date);
     break;
     case 'music-off':
       musicOn=false;
@@ -35,13 +39,14 @@ function onStockMessage(message) {
 }
 
 function startListeners() {
+  // testMidi();
   stockMessage.addEventListener('message', onStockMessage);
   stockMessage.start();
 }
 
 function getNote(x, y, dominant)
 {
-  // console.log(x,y,dominant);
+  console.log(x,y,dominant);
 // %GETNOTE Maps x, y position into the aligned pitch mesh structure
 // %   x - floating-point x position, loosely corresponding to pitch class
 // %   y - floating-point y position, loosely corresponding to register
@@ -104,7 +109,53 @@ function sleep(delay) {
   while (new Date().getTime() < start + delay);
 }
 
+function loadXMLFeed2(stock_name,start_date,finish_date){
+  console.log(stock_name);
+  console.log(start_date);
+  console.log(finish_date);
+  var stock_url = "https://sandbox.tradier.com/v1/markets/history?symbol="+
+                    stock_name+"&interval=daily&start="+
+                    start_date+"&end="+finish_date;
+  let h = new Headers();
+  h.append('Accept', 'application/json');
+  h.append('Authorization', 'Bearer mKPvM9IKK4Ru5kCgw8wbNBRzdKqw');
+
+
+  let req = new Request(stock_url, {
+      method: 'GET',
+      headers: h,
+      mode: 'cors'
+  });
+
+  fetch(req)
+      .then(response=>response.text())
+      .then(data=> {
+          let history = JSON.parse(data);
+          let days = history.history.day;
+          let min_max  = miditime.get_data_range(days);
+          let scale = c_major;
+          if(days[0] > days[days.length-1]){
+            scale=c_minor;
+          }
+          for(let day in days)
+          {
+            let scale_pct = miditime.linear_scale_pct(min_max[0],min_max[1],days[day].close);
+            let note = miditime.scale_to_note(scale_pct, scale);
+            let pitch = miditime.note_to_midi_pitch(note);
+            console.log(pitch);
+            midi.postMessage({type: 'note-on',pitch: pitch, velocity: 100});
+            sleep(500);
+            midi.postMessage({type: 'note-off',pitch: pitch, velocity: 100});
+            if(!musicOn) break; 
+          }
+      });
+
+}
+
 function loadXMLFeed(stock_name,start_date,finish_date){
+  console.log(stock_name);
+  console.log(start_date);
+  console.log(finish_date);
     // const url = "https://www.alphavantage.co/query?function=FX_INTRADAY&from_symbol=EUR&to_symbol=USD&interval=1min&apikey=5L58QGRKEDSSMQRG";
     var stock_url = "https://sandbox.tradier.com/v1/markets/history?symbol="+
                     stock_name+"&interval=daily&start="+
@@ -159,11 +210,14 @@ function loadXMLFeed(stock_name,start_date,finish_date){
           console.log('max_high: ' + max_high);
           console.log('min_low: ' + min_low);
           console.log('max_vol: ' + max_vol);
+          let prevVol = min_vol;
           for (let i =0;i < days.length;i++){
               let open = days[i].open;
               let close = days[i].close;
+              let low = days[i].low;
+              let high = days[i].high;
               let volume = parseInt(days[i].volume);
-              let pitch = getNote(3*((close-min_low)/(max_high-min_low)),3*((volume-min_vol)/(max_vol-min_vol)),(close-open)>=0);
+              let pitch = getNote(3*(close-low)/(high-low),(volume-min_vol)/(max_vol-min_vol),0);
               console.log(pitch);
               midi.postMessage({type: 'note-on',pitch: pitch, velocity: 100});
               sleep(500);
@@ -173,4 +227,3 @@ function loadXMLFeed(stock_name,start_date,finish_date){
 
     });
 }
-
