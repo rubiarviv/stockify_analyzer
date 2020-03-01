@@ -1,7 +1,7 @@
 // Name: Rubi Arviv
 // ID: 033906132
 import { initialize } from '@muzilator/sdk';
-import {miditime, get_data_range, linear_scale_pct, scale_to_note, note_to_midi_pitch} from './translator';
+import {miditime, get_data_range, linear_scale_pct, scale_to_note, note_to_midi_pitch, scale_to_note_classic} from './translator';
 var stockMessage;
 var midi;
 var musicOn=false;
@@ -18,6 +18,7 @@ window.addEventListener('load', () => {
     midi = await platform.createChannel('midi');
     startListeners();
   }
+  // loadXMLFeed2('AAPL','2020-01-30','2020-02-29');
   init();
 })
 
@@ -140,13 +141,18 @@ function loadXMLFeed2(stock_name,start_date,finish_date){
           for(let day in days)
           {
             let scale_pct = miditime.linear_scale_pct(min_max[0],min_max[1],days[day].close);
+            console.log('scale_pct: ' + scale_pct);
             let note = miditime.scale_to_note(scale_pct, scale);
+            console.log('note: ' + note);
+            if(note == null) continue;
             let pitch = miditime.note_to_midi_pitch(note);
-            console.log(pitch);
-            midi.postMessage({type: 'note-on',pitch: pitch, velocity: 100});
-            sleep(500);
-            midi.postMessage({type: 'note-off',pitch: pitch, velocity: 100});
-            if(!musicOn) break; 
+            console.log('pitch :'+ pitch);
+            if(midi != null){
+              midi.postMessage({type: 'note-on',pitch: pitch, velocity: 100});
+              sleep(500);
+              midi.postMessage({type: 'note-off',pitch: pitch, velocity: 100});
+              if(!musicOn) break; 
+            }
           }
       });
 

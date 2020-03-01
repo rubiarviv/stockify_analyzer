@@ -1,3 +1,12 @@
+function arraysIdentical(a, b) {
+    var i = a.length;
+    if (i != b.length) return false;
+    while (i--) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+};
+
 function MIDITime(tempo, seconds_per_year, base_octave, octave_range){
         console.log("MIDITime");
         this.tempo = tempo;
@@ -68,8 +77,8 @@ MIDITime.prototype.beat = function (numdays){
         let n = 0;
         while (n < this.octave_range){
             for(let m in mode){
-                let current_octave = toString(this.base_octave + (n * 1))
-                full_mode.append(m + current_octave)
+                let current_octave = (this.base_octave + (n * 1)).toString();
+                full_mode.push(mode[m] + current_octave);
             }
             n += 1;
         }
@@ -102,28 +111,28 @@ MIDITime.prototype.beat = function (numdays){
         while(n < this.octave_range){
             for(let note_i in mode){
                 let note = mode[note_i];
-                let note_found = false;
                 let note_key = null;
                 let groupkey=0;
-                for(let group_i in full_c_haystack)    {
+                let note_found = false;
+                for(let group_i in full_c_haystack){
                     let group = full_c_haystack[group_i];
                     for(let gnote_i in group){
                         let gnote = group[gnote_i];
                         let sub_gnote = gnote.slice(0,gnote.length-1);
                         // if (gnote[:-1] == note){ 
-                        if (sub_gnote == note){
+                        if (arraysIdentical(sub_gnote,note)){
                             full_mode.push(gnote);
                             note_found = true;
                             note_key = groupkey;
                         }
-                        if (note_found == true){
-                            break;
-                        }
+                    }
+                    if (note_found == true){
+                        break;
                     }
                     groupkey++;
                 }
-
-                full_c_haystack = full_c_haystack.slice(note_key,full_c_haystack.length-1);
+                
+                full_c_haystack.splice(note_key,1);
                 // full_c_haystack[note_key:];
             }
             n+=1;
@@ -144,7 +153,7 @@ MIDITime.prototype.beat = function (numdays){
         for (let note_i in this.note_chart)    {
             let note = this.note_chart[note_i];
             for (let form in note)    {
-                if (letter == note[form])
+                if (arraysIdentical(letter,note[form]))
                 {
                     midinum = i;
                     break;
@@ -175,3 +184,4 @@ MIDITime.prototype.beat = function (numdays){
     export let linear_scale_pct = MIDITime.linear_scale_pct;
     export let scale_to_note = MIDITime.scale_to_note;
     export let note_to_midi_pitch = MIDITime.note_to_midi_pitch;
+    export let scale_to_note_classic = MIDITime.scale_to_note_classic;
