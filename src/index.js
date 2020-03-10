@@ -1,7 +1,7 @@
 // Name: Rubi Arviv
 // ID: 033906132
 import { initialize } from '@muzilator/sdk';
-import {miditime, get_data_range, linear_scale_pct, scale_to_note, note_to_midi_pitch, scale_to_note_classic} from './translator';
+import {miditime, miditime1, miditime2, get_data_range, linear_scale_pct, scale_to_note, note_to_midi_pitch, scale_to_note_classic} from './translator';
 var stockMessage;
 var midi;
 var musicOn=false;
@@ -133,24 +133,43 @@ function loadXMLFeed2(stock_name,start_date,finish_date){
       .then(data=> {
           let history = JSON.parse(data);
           let days = history.history.day;
-          let min_max  = miditime.get_data_range(days);
+          let min_max  = miditime.get_data_range(days, 'close');
+          let min_max1  = miditime.get_data_range(days, 'high');
+          let min_max2  = miditime.get_data_range(days, 'low');
           let scale = c_major;
           if(days[0] > days[days.length-1]){
             scale=c_minor;
           }
           for(let day in days)
           {
+            let high = parseInt(days[day].high);
+            let low = parseInt(days[day].low);
             let scale_pct = miditime.linear_scale_pct(min_max[0],min_max[1],days[day].close);
+            let scale_pct1 = miditime1.linear_scale_pct(min_max1[0],min_max1[1],high);
+            let scale_pct2 = miditime2.linear_scale_pct(min_max2[0],min_max2[1],low);
             console.log('scale_pct: ' + scale_pct);
             let note = miditime.scale_to_note(scale_pct, scale);
+            let note1 = miditime1.scale_to_note(scale_pct1, scale);
+            let note2 = miditime2.scale_to_note(scale_pct2, scale);
             console.log('note: ' + note);
             if(note == null) continue;
             let pitch = miditime.note_to_midi_pitch(note);
+            let pitch1 = miditime1.note_to_midi_pitch(note1);
+            let pitch2 = miditime2.note_to_midi_pitch(note2);
             console.log('pitch :'+ pitch);
             if(midi != null){
-              midi.postMessage({type: 'note-on',pitch: pitch, velocity: 100});
-              sleep(500);
+              midi.postMessage({type: 'note-on',pitch: pitch, velocity: 127});
+              midi.postMessage({type: 'note-on',pitch: pitch1, velocity: 63});
+              midi.postMessage({type: 'note-on',pitch: pitch2, velocity: 63});
+              let diff=(100*(min_max[1]-min_max[0]))/(high-low);
+              if(diff>600){
+                diff=600;
+              }
+              sleep(diff);
+              console.log('diff :'+ diff);
               midi.postMessage({type: 'note-off',pitch: pitch, velocity: 100});
+              midi.postMessage({type: 'note-off',pitch: pitch1, velocity: 100});
+              midi.postMessage({type: 'note-off',pitch: pitch2, velocity: 100});
               if(!musicOn) break; 
             }
           }

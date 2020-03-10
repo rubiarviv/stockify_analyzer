@@ -54,14 +54,14 @@ MIDITime.prototype.beat = function (numdays){
     //         return week_start_date + datetime.timedelta(days=(desired_day_num - week_start_day))
     //     return week_start_date
 
-    MIDITime.prototype.get_data_range = function(data_list){
+    MIDITime.prototype.get_data_range = function(data_list, field){
         let max_high = -1;
         let min_low = 1000000;
         for (let i =0;i < data_list.length;i++){
             // let date = days[i].date;
             // let open = days[i].open;
-            let high = parseInt(data_list[i].close);
-            let low = parseInt(data_list[i].close);
+            let high = parseInt(data_list[i][field]);
+            let low = parseInt(data_list[i][field]);
             max_high = high>max_high?high:max_high;
             min_low = low<min_low?low:min_low;
             // let close = history.history.day[i].close;
@@ -179,7 +179,9 @@ MIDITime.prototype.beat = function (numdays){
         return range_min + (input_pct * scale_range);
     }
 
-    export let miditime = new MIDITime(120, 5, 5, 2);
+    export let miditime = new MIDITime(120, 5, 3, 2);
+    export let miditime1 = new MIDITime(120, 5, 5, 1);
+    export let miditime2 = new MIDITime(120, 5, 1, 1);
     export let get_data_range = MIDITime.get_data_range;
     export let linear_scale_pct = MIDITime.linear_scale_pct;
     export let scale_to_note = MIDITime.scale_to_note;
